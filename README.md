@@ -24,4 +24,5 @@ Most of the Python executable files out there are compiled using Py2exe or PyIns
 
 ## Files
 
-- exe_files/main.exe: Hello World compiled using Py2exe in 3.7
+- exe_files/helloworld_py2exe.exe: Hello World compiled using Py2exe in 3.7.9
+- exe_files/helloworld_py2exe_2.exe: Hello World compiled using Py2exe in 2.7.18

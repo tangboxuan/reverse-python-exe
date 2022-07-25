@@ -28,9 +28,9 @@ def check_python_version(filename):
 if __name__ == "__main__":
     # fileName = sys.argv[1]
     if platform.python_version().startswith("2"): 
-        fileName = "exe_files/khaki.exe"
+        fileName = "exe_files/helloworld_py2exe_2.exe"
     else:
-        fileName = "exe_files/main.exe"
+        fileName = "exe_files/helloworld_py2exe.exe"
     check_python_version(fileName)
     pe = pefile.PE(fileName)
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
