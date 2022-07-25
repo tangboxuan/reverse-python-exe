@@ -26,3 +26,4 @@ Most of the Python executable files out there are compiled using Py2exe or PyIns
 
 - exe_files/helloworld_py2exe.exe: Hello World compiled using Py2exe in 3.7.9
 - exe_files/helloworld_py2exe_2.exe: Hello World compiled using Py2exe in 2.7.18
+- exe_files/helloworld_pyinstaller.exe: Hello World compiled using PyInstaller in 3.7.9 on 64-bit Windows
