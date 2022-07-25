@@ -18,7 +18,7 @@ def get_rsrc(pe, name):
             return rsrc 
     return None
 
-def check_python_version(filename):
+def check_py2exe_pyversion(filename):
     command = "strings " + fileName + " | grep \"^python[0-9][0-9].dll$\""
     pythonVersion = platform.python_version()
     dll = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
@@ -34,12 +34,12 @@ def check_python_version(filename):
 
 if __name__ == "__main__":
     # fileName = sys.argv[1]
-    fileName = "exe_files/helloworld_py2exe_2.exe"
+    fileName = "exe_files/pyinstaller27.exe"
     pe = pefile.PE(fileName)
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
     if rsrc != None and rsrc[:4] == b"\x12\x34\x56\x78":
         # py2exe file
-        check_python_version(fileName)
+        check_py2exe_pyversion(fileName)
         offset = rsrc[0x010:].find(b"\x00") 
         if offset >= 0:
             data = rsrc[0x10 + offset + 1:]
@@ -56,6 +56,8 @@ if __name__ == "__main__":
     if arch.open():
         if arch.checkFile():
             # PyInstaller file
+            #if platform.system() != "Windows":
+            #    print("PyInstaller file detected. Require Windows to decompile.")
             if arch.getCArchiveInfo():
                 arch.parseTOC()
                 arch.extractFiles()
