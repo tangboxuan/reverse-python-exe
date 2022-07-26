@@ -55,9 +55,6 @@ if __name__ == "__main__":
     arch = PyInstArchive(fileName)
     if arch.open():
         if arch.checkFile():
-            # PyInstaller file
-            #if platform.system() != "Windows":
-            #    print("PyInstaller file detected. Require Windows to decompile.")
             if arch.getCArchiveInfo():
                 arch.parseTOC()
                 arch.extractFiles()

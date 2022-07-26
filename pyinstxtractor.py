@@ -187,7 +187,7 @@ class PyInstArchive:
                 # Entry point are expected to be python scripts
                 fileName = entry.name + ".pyc"
                 self._writePyc(fileName, data)
-                subprocess.run("uncompyle6 " + fileName)
+                os.system("uncompyle6 " + fileName)
                 os.remove(fileName)
 
 
