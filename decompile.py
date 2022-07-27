@@ -34,7 +34,7 @@ def check_py2exe_pyversion(filename):
 
 if __name__ == "__main__":
     # fileName = sys.argv[1]
-    fileName = "exe_files/pyinstaller27_onefile.exe"
+    fileName = "exe_files/cxfreeze37.exe"
     pe = pefile.PE(fileName)
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
     if rsrc != None and rsrc[:4] == b"\x12\x34\x56\x78":
@@ -59,7 +59,14 @@ if __name__ == "__main__":
                 arch.parseTOC()
                 arch.extractFiles()
                 arch.close()
+                sys.exit()
         arch.close()
+
+    cxCheckCommand = "strings " + fileName + " | grep lib\\\\library\.zip"
+    cxCheck = subprocess.Popen(cxCheckCommand, shell=True, stdout=subprocess.PIPE).stdout.read()
+    if cxCheck:
+        print("{} compiled with cx_freeze.".format(fileName))
+        print("Run uncompyle6 on every file ending with _main_.pyc in lib\library.zip")
         sys.exit()
 
-    print("Exe file not from py2exe or PyInstaller")
+    print("Exe file not from py2exe, PyInstall or cx_freeze")

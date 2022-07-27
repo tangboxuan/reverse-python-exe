@@ -86,7 +86,7 @@ class PyInstArchive:
                 break
 
         if self.cookiePos == -1:
-            print('[!] Error : Missing cookie, unsupported pyinstaller version or not a pyinstaller archive')
+            # print('[!] Error : Missing cookie, unsupported pyinstaller version or not a pyinstaller archive')
             return False
 
         self.fPtr.seek(self.cookiePos + self.PYINST20_COOKIE_SIZE, os.SEEK_SET)
