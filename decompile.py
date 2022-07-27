@@ -34,11 +34,11 @@ def check_py2exe_pyversion(filename):
 
 if __name__ == "__main__":
     # fileName = sys.argv[1]
-    fileName = "exe_files/cxfreeze37.exe"
+    fileName = "exe_files/wopr.exe"
     pe = pefile.PE(fileName)
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
     if rsrc != None and rsrc[:4] == b"\x12\x34\x56\x78":
-        # py2exe file
+        print("{} compiled with py2exe.".format(fileName))
         check_py2exe_pyversion(fileName)
         offset = rsrc[0x010:].find(b"\x00") 
         if offset >= 0:
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     arch = PyInstArchive(fileName)
     if arch.open():
         if arch.checkFile():
+            print("{} compiled with pyinstaller.".format(fileName))
             if arch.getCArchiveInfo():
                 arch.parseTOC()
                 arch.extractFiles()
@@ -62,8 +63,9 @@ if __name__ == "__main__":
                 sys.exit()
         arch.close()
 
-    cxCheckCommand = "strings " + fileName + " | grep lib\\\\library\.zip"
+    cxCheckCommand = "strings " + fileName + " | grep \"Unable to change DLL search path\""
     cxCheck = subprocess.Popen(cxCheckCommand, shell=True, stdout=subprocess.PIPE).stdout.read()
+    print(cxCheck)
     if cxCheck:
         print("{} compiled with cx_freeze.".format(fileName))
         print("Run uncompyle6 on every file ending with _main_.pyc in lib\library.zip")
