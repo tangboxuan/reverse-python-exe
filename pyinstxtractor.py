@@ -3,12 +3,9 @@
 from __future__ import print_function
 import os
 import struct
-import marshal
 import zlib
 import sys
-import subprocess
 from uuid import uuid4 as uniquename
-from uncompyle6.main import decompile
 
 # imp is deprecated in Python3 in favour of importlib
 if sys.version_info.major == 3:
@@ -123,6 +120,7 @@ class PyInstArchive:
         if sys.version_info[0] != self.pymaj or sys.version_info[1] != self.pymin:
             print("Python {0}.{1} required".format(self.pymaj, self.pymin))
             sys.exit(1)
+        print("Exe compiled using Python {}.{}".format(self.pymaj, self.pymin))
 
         # Additional data after the cookie
         tailBytes = self.fileSize - self.cookiePos - (self.PYINST20_COOKIE_SIZE if self.pyinstVer == 20 else self.PYINST21_COOKIE_SIZE)
@@ -187,8 +185,11 @@ class PyInstArchive:
                 # Entry point are expected to be python scripts
                 fileName = entry.name + ".pyc"
                 self._writePyc(fileName, data)
-                os.system("uncompyle6 " + fileName)
+                os.system("uncompyle6 {} > output/{}.py".format(fileName, entry.name))
                 os.remove(fileName)
+                print("Successfully decompiled file at output/{}.py".format(entry.name))
+        
+        print("Successfully decompiled all files")
 
 
     def _writePyc(self, filename, data):

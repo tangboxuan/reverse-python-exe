@@ -2,7 +2,7 @@
 # adapted from https://www.mandiant.com/resources/deobfuscating-python
 
 import pefile 
-import sys, dis, marshal, re, os, subprocess, platform
+import sys, marshal, os, subprocess, platform
 from uncompyle6.main import decompile
 from pyinstxtractor import PyInstArchive
 
@@ -27,14 +27,20 @@ def check_py2exe_pyversion(filename):
         if not pythonVersion.startswith(exeVersion):
             print("Python " + exeVersion + " required")
             sys.exit()
+        else:
+            print("Exe compiled using Python {}".format(exeVersion))
     else:
         if not pythonVersion.startswith('2'):
             print("Python 2 required")
             sys.exit()
+        else:
+            print("Exe compiled using Python 2")
 
 if __name__ == "__main__":
     # fileName = sys.argv[1]
-    fileName = "exe_files/wopr.exe"
+    if not os.path.exists("output"):
+        os.mkdir("output")
+    fileName = "exe_files/py2exe37.exe"
     pe = pefile.PE(fileName)
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
     if rsrc != None and rsrc[:4] == b"\x12\x34\x56\x78":
@@ -44,13 +50,13 @@ if __name__ == "__main__":
         if offset >= 0:
             data = rsrc[0x10 + offset + 1:]
             py2exeCode = marshal.loads(data)[-1]
-            # dis.dis(py2exeCode)
-            decompile(None, py2exeCode, sys.stdout)
-            print()
+            with open("output/"+py2exeCode.co_filename, "w") as fo:
+                decompile(None, py2exeCode, fo)
+            print("Successfully decompiled file at output/{}".format(py2exeCode.co_filename))
+            sys.exit()
         else:
             print("Failed to find end of header")
             sys.exit(1)
-        sys.exit()
     
     arch = PyInstArchive(fileName)
     if arch.open():
