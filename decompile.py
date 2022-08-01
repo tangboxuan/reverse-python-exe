@@ -2,9 +2,12 @@
 # adapted from https://www.mandiant.com/resources/deobfuscating-python
 
 import pefile 
-import marshal, os, platform, re
-from uncompyle6.main import decompile
-from pyinstxtractor import PyInstArchive
+import marshal
+import os
+import platform
+import re
+from uncompyle6.main import decompile_file
+from pyinstxtractor import PyInstArchive, generatePycHeader
 
 def get_rsrc(pe, name):
     for resource_type in pe.DIRECTORY_ENTRY_RESOURCE.entries:
@@ -44,6 +47,12 @@ def exe2py(fileName):
         print("File {} not found".format(fileName))
         return False
 
+    try:
+        pe.DIRECTORY_ENTRY_RESOURCE
+    except AttributeError:
+        print("Not a python file")
+        return False
+        
     # py2exe
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
     if rsrc != None and rsrc[:4] == b"\x12\x34\x56\x78":
@@ -54,8 +63,17 @@ def exe2py(fileName):
         if offset >= 0:
             data = rsrc[0x10 + offset + 1:]
             py2exeCode = marshal.loads(data)[-1]
-            with open("output/"+py2exeCode.co_filename, "w") as fo:
-                decompile(None, py2exeCode, fo)
+            
+            pycfilename = py2exeCode.co_filename + 'c'
+            try:
+                with open(pycfilename, "wb") as pyc:
+                    pyc.write(generatePycHeader())
+                    marshaled_code = marshal.dumps(py2exeCode)
+                    pyc.write(marshaled_code)
+                with open("output/"+py2exeCode.co_filename, "w") as fo:
+                    decompile_file(pycfilename, fo)
+            finally:
+                os.remove(pycfilename)
             print("Successfully decompiled file at output/{}".format(py2exeCode.co_filename))
             return True
         else:
@@ -67,11 +85,18 @@ def exe2py(fileName):
     if arch.open():
         if arch.checkFile():
             print("{} compiled with pyinstaller.".format(fileName))
-            if arch.getCArchiveInfo():
+            pyinstallerCheck = arch.getCArchiveInfo()
+            if pyinstallerCheck == 1:
                 arch.parseTOC()
                 arch.extractFiles()
                 arch.close()
                 return True
+            elif pyinstallerCheck == -1:
+                # Wrong python version
+                return False
+            else:
+                # Not a pyinstaller file
+                pass
         arch.close()
 
     # cx_freeze
@@ -92,7 +117,7 @@ if __name__ == "__main__":
     except NameError:
         FileNotFoundError = OSError
 
-    files = ["exe_files/py2exe37.exe", "exe_files/pyinstaller3.exe"]
+    files = ["exe_files/trilog.exe"]
     for file in files:
         print('#' * 70)
         if not exe2py(file):

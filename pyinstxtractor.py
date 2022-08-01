@@ -16,6 +16,17 @@ else:
     import imp
     pyc_magic = imp.get_magic()
 
+def generatePycHeader():
+    version_tuple = sys.version_info
+
+    header = pyc_magic
+    if version_tuple[0] == 3 and version_tuple[1] >= 7:
+        header += b'\0' * 12
+    else:
+        header += b'\0' * 4
+        if version_tuple[0] == 3 and version_tuple[1] >= 3:
+            header += b'\0' * 4
+    return header
 
 class CTOCEntry:
     def __init__(self, position, cmprsdDataSize, uncmprsdDataSize, cmprsFlag, typeCmprsData, name):
@@ -115,12 +126,12 @@ class PyInstArchive:
 
         except:
             print('[!] Error : The file is not a pyinstaller archive')
-            return False
+            return 0
 
         self.pymaj, self.pymin = (pyver//100, pyver%100) if pyver >= 100 else (pyver//10, pyver%10)
         if sys.version_info[0] != self.pymaj or sys.version_info[1] != self.pymin:
             print("Python {0}.{1} required".format(self.pymaj, self.pymin))
-            return False
+            return -1
         print("Exe compiled using Python {}.{}".format(self.pymaj, self.pymin))
 
         # Additional data after the cookie
@@ -132,7 +143,7 @@ class PyInstArchive:
         self.tableOfContentsPos = self.overlayPos + toc
         self.tableOfContentsSize = tocLen
 
-        return True
+        return 1
 
 
     def parseTOC(self):
@@ -195,18 +206,7 @@ class PyInstArchive:
         
         print("Successfully decompiled all files")
 
-
     def _writePyc(self, filename, data):
         with open(filename, 'wb') as pycFile:
-            pycFile.write(pyc_magic)            # pyc magic
-
-            if self.pymaj >= 3 and self.pymin >= 7:                # PEP 552 -- Deterministic pycs
-                pycFile.write(b'\0' * 4)        # Bitfield
-                pycFile.write(b'\0' * 8)        # (Timestamp + size) || hash 
-
-            else:
-                pycFile.write(b'\0' * 4)      # Timestamp
-                if self.pymaj >= 3 and self.pymin >= 3:
-                    pycFile.write(b'\0' * 4)  # Size parameter added in Python 3.3
-
+            pycFile.write(generatePycHeader())
             pycFile.write(data)
