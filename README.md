@@ -29,6 +29,7 @@ Most of the Python executable files out there are compiled using Py2exe, PyInsta
 
 ## EXE Files
 
+- trilog.exe: ICS Malware compiled using Py2exe in 2.7
 - fidler.exe: Flare-On 7 (2020) Challenge 1 compiled using PyInstaller in 3.8
 - wopr.exe: Flare-On 6 (2019) Challenge 7 compiled using PyInstaller in 3.7
 - py2exe37.exe: Hello World compiled using Py2exe in 3.7.9

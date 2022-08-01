@@ -6,6 +6,7 @@ import struct
 import zlib
 import sys
 from uuid import uuid4 as uniquename
+from uncompyle6.main import decompile_file
 
 # imp is deprecated in Python3 in favour of importlib
 if sys.version_info.major == 3:
@@ -119,7 +120,7 @@ class PyInstArchive:
         self.pymaj, self.pymin = (pyver//100, pyver%100) if pyver >= 100 else (pyver//10, pyver%10)
         if sys.version_info[0] != self.pymaj or sys.version_info[1] != self.pymin:
             print("Python {0}.{1} required".format(self.pymaj, self.pymin))
-            sys.exit(1)
+            return False
         print("Exe compiled using Python {}.{}".format(self.pymaj, self.pymin))
 
         # Additional data after the cookie
@@ -183,10 +184,13 @@ class PyInstArchive:
             if entry.typeCmprsData == b's':
                 # s -> ARCHIVE_ITEM_PYSOURCE
                 # Entry point are expected to be python scripts
-                fileName = entry.name + ".pyc"
-                self._writePyc(fileName, data)
-                os.system("uncompyle6 {} > output/{}.py".format(fileName, entry.name))
-                os.remove(fileName)
+                filename = entry.name + ".pyc"
+                try:
+                    self._writePyc(filename, data)
+                    with open("output/{}.py".format(entry.name), "w") as fo:
+                        decompile_file(filename, outstream=fo)
+                finally:
+                    os.remove(filename)
                 print("Successfully decompiled file at output/{}.py".format(entry.name))
         
         print("Successfully decompiled all files")
