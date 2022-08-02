@@ -8,6 +8,8 @@ This script aims to decompile any Windows executable file compiled using Python 
 
 - [x] Python 2 using Py2exe
 - [x] Python 3 using Py2exe
+- [x] Python 2 using Py2exe with obsfucation
+- [ ] Python 3 using Py2exe with obsfucation
 - [x] Python 2 using PyInstaller
 - [x] Python 3 using PyInstaller 
 - [x] Python 2 using PyInstaller --onefile
@@ -27,11 +29,15 @@ For CX_Freeze files, the Python code is not located within the exe file but in p
 
 Most of the Python executable files out there are compiled using Py2exe, PyInstaller or CX_Freeze. While this script aims to decompile any exe file, it is currently limited to only those compiled using these 3 libraries.
 
+This script also aims to deobsfucate Python bytecode containing the following obsfucation:
+- ``` NOP, ROT_TWO, ROT_THREE, LOAD_CONST & POP_TOP ```
+
 ## EXE Files
 
 - trilog.exe: ICS Malware compiled using Py2exe in 2.7
 - fidler.exe: Flare-On 7 (2020) Challenge 1 compiled using PyInstaller in 3.8
 - wopr.exe: Flare-On 6 (2019) Challenge 7 compiled using PyInstaller in 3.7
+- khaki.exe: Flare-On 3 (2016) Challenge 6 compiled using Py2exe in 2.7 and obsfucated
 - py2exe37.exe: Hello World compiled using Py2exe in 3.7.9
 - py2exe27.exe: Hello World compiled using Py2exe in 2.7.18
 - pyinstaller37.exe: Hello World compiled using PyInstaller in 3.7.9 on 64-bit Windows

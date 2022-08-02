@@ -8,6 +8,7 @@ import platform
 import re
 from uncompyle6.main import decompile_file
 from pyinstxtractor import PyInstArchive, generatePycHeader
+from clean import clean
 
 def get_rsrc(pe, name):
     for resource_type in pe.DIRECTORY_ENTRY_RESOURCE.entries:
@@ -37,7 +38,7 @@ def check_py2exe_pyversion(pe):
             print("Python 2 required")
             return False
         else:
-            print("Exe compiled using Python 2")
+            print("Exe probably compiled using Python 2")
             return True
 
 def exe2py(fileName):
@@ -63,12 +64,13 @@ def exe2py(fileName):
         if offset >= 0:
             data = rsrc[0x10 + offset + 1:]
             py2exeCode = marshal.loads(data)[-1]
-            
+            cleanCode = clean(py2exeCode)
+
             pycfilename = py2exeCode.co_filename + 'c'
             try:
                 with open(pycfilename, "wb") as pyc:
                     pyc.write(generatePycHeader())
-                    marshaled_code = marshal.dumps(py2exeCode)
+                    marshaled_code = marshal.dumps(cleanCode)
                     pyc.write(marshaled_code)
                 with open("output/"+py2exeCode.co_filename, "w") as fo:
                     decompile_file(pycfilename, fo)
@@ -117,7 +119,8 @@ if __name__ == "__main__":
     except NameError:
         FileNotFoundError = OSError
 
-    files = ["exe_files/trilog.exe"]
+    files = ["exe_files/khaki.exe"]
+    # files = os.listdir("input")
     for file in files:
         print('#' * 70)
         if not exe2py(file):
