@@ -1,5 +1,4 @@
 # compatible with both Python 2 and Python 3
-# adapted from https://www.mandiant.com/resources/deobfuscating-python
 
 import pefile 
 import marshal
@@ -55,6 +54,7 @@ def exe2py(fileName):
         return False
         
     # py2exe
+    # adapted from https://www.mandiant.com/resources/deobfuscating-python
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
     if rsrc != None and rsrc[:4] == b"\x12\x34\x56\x78":
         print("{} compiled with py2exe.".format(fileName))
