@@ -28,6 +28,7 @@ def check_py2exe_pyversion(pe):
         exeVersion = '.'.join(c for c in str(peVersion[0]) if c.isdigit())
         if not pythonVersion.startswith(exeVersion):
             print("Python " + exeVersion + " required")
+            print("[!] Please switch your Python version")
             return False
         else:
             print("Exe compiled using Python {}".format(exeVersion))

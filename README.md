@@ -42,6 +42,7 @@ This script also aims to deobsfuscate Python bytecode containing the following o
 1. py2exe27.exe: Hello World in 1 line compiled using Py2exe in 2.7.18
 1. py2exe37_2line.exe: Exactly 2 lines of print compiled using Py2exe in 3.7.9
 1. py2exe27_2line.exe: Exactly 2 lines of print compiled using Py2exe in 2.7.18
+1. py2exe37_3line.exe: Exactly 3 lines of print compiled using Py2exe in 3.7.9
 1. py2exe27_3line.exe: Exactly 3 lines of print compiled using Py2exe in 2.7.18
 1. pyinstaller37.exe: Hello World compiled using PyInstaller in 3.7.9 on 64-bit Windows
 1. pyinstaller27.exe: Hello World compiled using PyInstaller in 2.7.18 on 64-bit Windows
