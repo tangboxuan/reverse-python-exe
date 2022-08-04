@@ -5,6 +5,7 @@ import dis
 import struct
 
 from dis import opname
+from types import CodeType
 
 def get_int(value):
     if sys.version_info.major == 3:
@@ -173,10 +174,7 @@ class BytecodeGraph():
         '''
         Creates a new co_lineno after modifying bytecode
         '''
-        if sys.version_info.major == 3:
-            rvalue = bytearray()
-        elif sys.version_info.major == 2:
-            rvalue = ""
+        rvalue = bytearray()
 
         prev_lineno = self.code.co_firstlineno
         prev_offset = self.head.addr
@@ -189,12 +187,8 @@ class BytecodeGraph():
             if current.lineno == prev_lineno:
                 continue
 
-            if sys.version_info.major == 3:
-                rvalue.append(current.addr - prev_offset)
-                rvalue.append((current.lineno - prev_lineno) & 0xff)
-            elif sys.version_info.major == 2:
-                rvalue += struct.pack("BB", current.addr - prev_offset,
-                                    (current.lineno - prev_lineno) & 0xff)
+            rvalue.append(current.addr - prev_offset)
+            rvalue.append((current.lineno - prev_lineno) & 0xff)
 
             prev_lineno = current.lineno
             prev_offset = current.addr
@@ -245,49 +239,41 @@ class BytecodeGraph():
         new_co_lnotab = self.calc_lnotab()
 
         # generate new bytecode stream
-        if sys.version_info.major == 3:
-            new_co_code = bytearray()
-            for x in self.nodes(start):
-                new_co_code.extend(x.bin())
-        elif sys.version_info.major == 2:
-            new_co_code = ""
-            for x in self.nodes(start):
-                new_co_code += x.bin()
+        new_co_code = bytearray()
+        for x in self.nodes(start):
+            new_co_code.extend(x.bin())
 
         # create a new code object with modified bytecode and updated line numbers
         # a new code object is necessary because co_code is readonly
         if sys.version_info.major == 3:
-            from types import CodeType
-            return CodeType(
-                self.code.co_argcount,
-                self.code.co_kwonlyargcount,
-                self.code.co_nlocals,
-                self.code.co_stacksize,
-                self.code.co_flags,
-                bytes(new_co_code),
-                self.code.co_consts,
-                self.code.co_names,
-                self.code.co_varnames,
-                self.code.co_filename,
-                self.code.co_name,
-                self.code.co_firstlineno,
-                bytes(new_co_lnotab),
-                self.code.co_freevars,
-                self.code.co_cellvars)
-        elif sys.version_info.major == 2:
-            import new
-            rvalue = new.code(self.code.co_argcount,
+            rvalue = CodeType(self.code.co_argcount,
+                            self.code.co_kwonlyargcount,
                             self.code.co_nlocals,
                             self.code.co_stacksize,
                             self.code.co_flags,
-                            new_co_code,
+                            bytes(new_co_code),
                             self.code.co_consts,
                             self.code.co_names,
                             self.code.co_varnames,
                             self.code.co_filename,
                             self.code.co_name,
                             self.code.co_firstlineno,
-                            new_co_lnotab)
+                            bytes(new_co_lnotab),
+                            self.code.co_freevars,
+                            self.code.co_cellvars)
+        elif sys.version_info.major == 2:
+            rvalue = CodeType(self.code.co_argcount,
+                            self.code.co_nlocals,
+                            self.code.co_stacksize,
+                            self.code.co_flags,
+                            bytes(new_co_code),
+                            self.code.co_consts,
+                            self.code.co_names,
+                            self.code.co_varnames,
+                            self.code.co_filename,
+                            self.code.co_name,
+                            self.code.co_firstlineno,
+                            bytes(new_co_lnotab))
 
         return rvalue
 

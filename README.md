@@ -9,7 +9,7 @@ This script aims to decompile any Windows executable file compiled using Python 
 - [x] Python 2 using Py2exe
 - [x] Python 3 using Py2exe
 - [x] Python 2 using Py2exe with obsfucation
-- [ ] Python 3 using Py2exe with obsfucation
+- [x] Python 3 using Py2exe with obsfucation
 - [x] Python 2 using PyInstaller
 - [x] Python 3 using PyInstaller 
 - [x] Python 2 using PyInstaller --onefile
