@@ -24,7 +24,7 @@ class Bytecode():
         self.next = next
         self.xrefs = []
         self.target = None
-        self.co_lnotab = None
+        self.lineno = None
 
     def len(self):
         '''
@@ -95,9 +95,9 @@ class BytecodeGraph():
         bc.next = parent.next
         bc.prev = parent
         if lnotab is None:
-            bc.co_lnotab = parent.co_lnotab
+            bc.lineno = parent.lineno
         else:
-            bc.co_lnotab = lnotab
+            bc.lineno = lnotab
 
         if parent.next is not None:
             parent.next.prev = bc
@@ -156,7 +156,7 @@ class BytecodeGraph():
                 current_lineno = next_lineno
                 if len(linenos) != 0:
                     next_addr, next_lineno = linenos.pop(0)
-            x.co_lnotab = current_lineno
+            x.lineno = current_lineno
 
     def calc_lnotab(self):
         '''
@@ -169,19 +169,16 @@ class BytecodeGraph():
 
         for current in self.nodes():
 
-            if current.co_lnotab is None:
+            if current.lineno is None:
                 # only one line of code
                 continue
-            if current.co_lnotab == prev_lineno:
+            if current.lineno == prev_lineno:
                 continue
 
-            new_offset = current.co_lnotab - prev_lineno
-            new_offset = 0xff if new_offset > 0xff else new_offset
-
             rvalue += struct.pack("BB", current.addr - prev_offset,
-                                  (current.co_lnotab - prev_lineno) & 0xff)
+                                  (current.lineno - prev_lineno) & 0xff)
 
-            prev_lineno = current.co_lnotab
+            prev_lineno = current.lineno
             prev_offset = current.addr
         return rvalue
 
@@ -217,7 +214,7 @@ class BytecodeGraph():
         rvalue = ""
         for x in self.nodes(start):
             rvalue += "[%04d] %04x %-6s %s\n" % \
-                    (x.co_lnotab, x.addr, x.hex(), x.disassemble())
+                    (x.lineno, x.addr, x.hex(), x.disassemble())
         return rvalue
 
     def get_code(self, start=None):
@@ -227,7 +224,7 @@ class BytecodeGraph():
         self.refactor()
 
         # generate a new co_lineno
-        new_co_lineno = self.calc_lnotab()
+        new_co_lnotab = self.calc_lnotab()
 
         # generate new bytecode stream
         new_co_code = ""
@@ -249,7 +246,7 @@ class BytecodeGraph():
                             self.code.co_filename,
                             self.code.co_name,
                             self.code.co_firstlineno,
-                            new_co_lineno)
+                            new_co_lnotab)
         else:
             rvalue = new.code(self.code.co_argcount,
                             self.code.co_nlocals,
@@ -262,7 +259,7 @@ class BytecodeGraph():
                             self.code.co_filename,
                             self.code.co_name,
                             self.code.co_firstlineno,
-                            new_co_lineno)
+                            new_co_lnotab)
 
         return rvalue
 
