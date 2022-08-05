@@ -3,3 +3,4 @@ __pycache__
 *.pyc
 output*
 input*
+!pyc_files/*

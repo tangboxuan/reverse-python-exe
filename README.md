@@ -50,6 +50,11 @@ This script also aims to deobsfuscate Python bytecode containing the following o
 1. pyinstaller27_onefile.exe: Hello World compiled using PyInstaller in 2.7.18 on 64-bit Windows with --onefile flag
 1. cxfreeze37.exe: Hello World compiled using CX_Freeze in 3.7.9 on 64-bit Windows
 
+## pyc Files
+
+1. helloworld37.pyc: Hello World compiled using py_compile in 3.7.10
+1. helloworld27.pyc: Hello World compiled using py_compile in 2.7.18
+
 ## TO DO
 
 - Deobfuscate Python bytecode containing ``` NOP, ROT_TWO, ROT_THREE, LOAD_CONST & POP_TOP ``` obsfucation in Python 3
