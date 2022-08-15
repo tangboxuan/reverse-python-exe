@@ -6,7 +6,7 @@ import os
 import platform
 import re
 import sys
-from utilities import generatePycHeader, pyc2py
+from utilities import pyc2py, writepyc
 from magic import magic_word_to_version
 from pyinstxtractor import PyInstArchive
 from clean import clean
@@ -67,10 +67,7 @@ def exe2py(filename):
 
             pycfilename = py2exeCode.co_filename + 'c'
             try:
-                with open(pycfilename, "wb") as pyc:
-                    pyc.write(generatePycHeader())
-                    marshaled_code = marshal.dumps(cleanCode)
-                    pyc.write(marshaled_code)
+                writepyc(pycfilename, marshal.dumps(cleanCode))
                 pyc2py(pycfilename, py2exeCode.co_filename)
             finally:
                 os.remove(pycfilename)

@@ -6,7 +6,7 @@ import struct
 import zlib
 import sys
 from uuid import uuid4 as uniquename
-from utilities import generatePycHeader, pyc2py
+from utilities import pyc2py, writepyc
 
 class CTOCEntry:
     def __init__(self, position, cmprsdDataSize, uncmprsdDataSize, cmprsFlag, typeCmprsData, name):
@@ -175,17 +175,12 @@ class PyInstArchive:
             if entry.typeCmprsData == b's':
                 # s -> ARCHIVE_ITEM_PYSOURCE
                 # Entry point are expected to be python scripts
-                filename = entry.name + ".pyc"
+                pycfilename = "{}.pyc".format(entry.name)
                 try:
-                    self._writePyc(filename, data)
-                    pyc2py(filename, entry.name)
+                    writepyc(pycfilename, data)
+                    pyc2py(pycfilename, "{}.py".format(entry.name))
                 finally:
-                    os.remove(filename)
+                    os.remove(pycfilename)
                 print("Successfully decompiled file at output/{}.py".format(entry.name))
         
         print("Successfully decompiled all files")
-
-    def _writePyc(self, filename, data):
-        with open(filename, 'wb') as pycFile:
-            pycFile.write(generatePycHeader())
-            pycFile.write(data)
