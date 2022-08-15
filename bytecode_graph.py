@@ -1,11 +1,17 @@
 # credits https://github.com/mandiant/flare-bytecode_graph/blob/master/bytecode_graph/bytecode_graph.py
 
 import sys
+if sys.version_info.major not in [2, 3]:
+    raise NotImplementedError("Only Python 2 and 3 are supported")
+
 import dis
 import struct
 
 from dis import opname
 from types import CodeType
+
+python36 = sys.version_info >= (3, 6)
+extended_multiplier = 0x100 if python36 else 0x10000
 
 def get_int(value):
     if sys.version_info.major == 3:
@@ -19,20 +25,22 @@ class Bytecode():
     '''
     Class to store individual instruction as a node in the graph
     '''
-    def __init__(self, addr, buffer, prev=None, next=None, xrefs=[]):
-        if sys.version_info.major not in [2, 3]:
-            raise NotImplementedError("Only Python 2 and 3 are supported")
-        self.opcode = get_int(buffer[0])
+    def __init__(self, addr=None, buffer=None, prev=None, next=None, xrefs=[]):
         self.addr = addr
 
-        if sys.version_info >= (3, 6):
-            self.oparg = get_int(buffer[1])
-            self.actualarg = self.oparg
-        elif self.opcode >= dis.HAVE_ARGUMENT:
-            self.oparg = get_int(buffer[1]) | (get_int(buffer[2]) << 8)
+        if buffer:
+            self.opcode = get_int(buffer[0])
+            if python36:
+                self.oparg = get_int(buffer[1])
+            elif self.opcode >= dis.HAVE_ARGUMENT:
+                self.oparg = get_int(buffer[1]) | (get_int(buffer[2]) << 8)
+            else:
+                self.oparg = None
         else:
+            self.opcode = None
             self.oparg = None
 
+        self.actualarg = self.oparg
         self.prev = prev
         self.next = next
         self.xrefs = []
@@ -43,7 +51,7 @@ class Bytecode():
         return self.disassemble()
 
     def is_extendedarg(self):
-        return self.opcode == 144
+        return self.opcode == dis.opmap["EXTENDED_ARG"]
 
     def len(self):
         '''
@@ -51,7 +59,7 @@ class Bytecode():
         1 for no argument
         3 for argument
         '''
-        if sys.version_info >= (3, 6):
+        if python36:
             return 2
         if self.opcode < dis.HAVE_ARGUMENT:
             return 1
@@ -66,13 +74,13 @@ class Bytecode():
         rvalue += "%s " % self.hex()
         rvalue += opname[self.opcode].ljust(20)
         if self.opcode >= dis.HAVE_ARGUMENT:
-            if sys.version_info >= (3, 6):
-                if self.oparg == self.actualarg:
+            if self.oparg == self.actualarg:
+                if python36:
                     rvalue += "%02x" % (self.actualarg)
                 else:
-                    rvalue += "(%x)" % (self.actualarg)
+                    rvalue += "%04x" % (self.actualarg)
             else:
-                rvalue += " %04x" % (self.oparg)
+                rvalue += "(%x)" % (self.actualarg)
         return rvalue
 
     def hex(self):
@@ -80,18 +88,20 @@ class Bytecode():
         Return ASCII hex representation of bytecode
         '''
         rvalue = "%02x" % self.opcode
-        if sys.version_info >= (3, 6):
+        if python36:
             rvalue += "%02x" % self.oparg
         elif self.opcode >= dis.HAVE_ARGUMENT:
             rvalue += "%02x%02x" % \
                     (self.oparg & 0xff, (self.oparg >> 8) & 0xff)
+        else:
+            rvalue += "    "
         return rvalue
 
     def bin(self):
         '''
         Return bytecode string
         '''
-        if sys.version_info >= (3, 6):
+        if python36:
             return struct.pack("<BB", self.opcode, self.oparg)
         elif self.opcode >= dis.HAVE_ARGUMENT:
             return struct.pack("<BH", self.opcode, self.oparg)
@@ -103,19 +113,16 @@ class Bytecode():
         Returns the target address for the current instruction based on the
         current address.
         '''
-        rvalue = None
         if self.opcode in dis.hasjrel:
-            rvalue = self.addr + self.len() + self.actualarg
-        if self.opcode in dis.hasjabs:
-            rvalue = self.actualarg
-
-        return rvalue
+            return self.addr + self.len() + self.actualarg
+        elif self.opcode in dis.hasjabs:
+            return self.actualarg
+        else:
+            return None
 
 
 class BytecodeGraph():
     def __init__(self, code, base=0):
-        if sys.version_info.major not in [2, 3]:
-            raise NotImplementedError("Only Python 2 and 3 are supported")
         self.base = base
         self.code = code
         self.head = None
@@ -125,7 +132,7 @@ class BytecodeGraph():
     def __str__(self):
         return self.disassemble()
 
-    def add_node(self, parent, bc, lnotab=None):
+    def add_node(self, parent, bc, lnotab=None, change_target=False):
         '''
         Adds an instruction node to the graph
         '''
@@ -142,6 +149,11 @@ class BytecodeGraph():
 
         parent.next = bc
 
+        if change_target:
+            for x in bc.next.xrefs:
+                x.target = bc
+                bc.xrefs.append(x)
+
     def apply_labels(self, start=None):
         '''
         Find all JMP REL and ABS bytecode sequences and update the target
@@ -152,18 +164,11 @@ class BytecodeGraph():
             current.target = None
 
         for current in self.nodes(start):
-            label = -1
-            if current.opcode >= dis.HAVE_ARGUMENT:
-                ##### TODO: Refactor to use get_target_addr() #####
-                if current.opcode in dis.hasjrel:
-                    label = current.addr+current.len()+current.actualarg
-                elif current.opcode in dis.hasjabs:
-                    label = current.actualarg
-
-                if label >= 0:
-                    if current not in self.bytecodes[label].xrefs:
-                        self.bytecodes[label].xrefs.append(current)
-                    current.target = self.bytecodes[label]
+            label = current.get_target_addr()
+            if label:
+                if current not in self.bytecodes[label].xrefs:
+                    self.bytecodes[label].xrefs.append(current)
+                current.target = self.bytecodes[label]
             current = current.next
         return
 
@@ -199,7 +204,7 @@ class BytecodeGraph():
 
     def calc_lnotab(self):
         '''
-        Creates a new co_lineno after modifying bytecode
+        Creates a new co_lnotab after modifying bytecode
         '''
         rvalue = bytearray()
 
@@ -334,14 +339,15 @@ class BytecodeGraph():
         targets = []
 
         while offset < len(self.code.co_code):
-            extended_arg *= 256
-            next = Bytecode(self.base + offset,
-                            self.code.co_code[offset:offset+3],
-                            prev)
+            extended_arg *= extended_multiplier
+            next = Bytecode(addr=self.base + offset,
+                            buffer=self.code.co_code[offset:offset+3],
+                            prev=prev)
 
             if next.is_extendedarg():
                 extended_arg += next.oparg
-            else:
+                next.actualarg = extended_arg
+            elif extended_arg != 0:
                 next.actualarg += extended_arg
                 extended_arg = 0
 
@@ -392,8 +398,8 @@ class BytecodeGraph():
         return modified
 
     def clean_jump(self, jump):
-        jump.oparg = jump.actualarg % 256
-        return self.clean_extendedarg(jump, jump.actualarg // 256)
+        jump.oparg = jump.actualarg % extended_multiplier
+        return self.clean_extendedarg(jump, jump.actualarg // extended_multiplier)
 
     def clean_extendedarg(self, current, remainder):
         assert(remainder >= 0)
@@ -405,11 +411,16 @@ class BytecodeGraph():
                 return False
         else: # remainder > 0
             if current.prev is not None and current.prev.is_extendedarg():
-                current.prev.oparg = remainder % 256
-                current.prev.actualarg = current.prev.oparg
-                return self.clean_extendedarg(current.prev, remainder // 256)
+                current.prev.oparg = remainder % extended_multiplier
+                current.prev.actualarg = remainder
+                return self.clean_extendedarg(current.prev, remainder // extended_multiplier)
             else: # add a extended arg node
-                raise NotImplementedError("Adding EXTENDED_ARG nodes not implemented")
+                new_extended = Bytecode()
+                new_extended.opcode = dis.opmap['EXTENDED_ARG']
+                new_extended.oparg = remainder % extended_multiplier
+                new_extended.actualarg = remainder
+                self.add_node(current.prev, new_extended, change_target=True)
+                self.clean_extendedarg(new_extended, remainder // extended_multiplier)
                 return True
 
     def refactor(self):

@@ -32,6 +32,14 @@ Most of the Python executable files are compiled using Py2exe, PyInstaller or CX
 This script also aims to deobsfuscate Python bytecode containing the following obsfucation:
 - ``` NOP, ROT_TWO, ROT_THREE, LOAD_CONST & POP_TOP ```
 
+## Tested on
+- Evilnum Pyvil RAT
+  1. 3fb323ad790d26fa319577e179190c1b25840a2aeffbe11072cce48f1bafde89
+  1. 5988265627e2935865a2255f90d10c83b54046137834cb4c81748f2221971a4b
+  1. 5b159b58ee73c3330b1599913c6a7f66e4aaecad536223474fc8b6bb7700cd2f
+  1. 824626e09bffec0ee539d0165df0d9a1ef668d32d8fcccf13708d24e108d7cf9
+  1. d0c313a1983498abadb5ff36cb66aca5d2fc8893cbd6d40f9a85c6274fe5c8a3
+
 ## exe Files
 
 1. trilog.exe: ICS Malware compiled using Py2exe in 2.7
@@ -56,8 +64,7 @@ This script also aims to deobsfuscate Python bytecode containing the following o
 1. helloworld27.pyc: Hello World compiled using py_compile in 2.7.18
 
 ## TO DO
-
-- Support EXTENDED_ARG opcode
+- Fix ```Exception in ifelsestmt '>' not supported between instances of 'str' and 'int'``` error
 - Also support folders created by the 3 libraries (which would also automate the reverse engineering of files created by CX_Freeze)
 - Publish library
 
