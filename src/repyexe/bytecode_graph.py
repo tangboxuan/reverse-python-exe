@@ -1,4 +1,5 @@
-# credits https://github.com/mandiant/flare-bytecode_graph/blob/master/bytecode_graph/bytecode_graph.py
+# modified from https://github.com/mandiant/flare-bytecode_graph/blob/master/bytecode_graph/bytecode_graph.py
+# by Joshua Homan, Mandiant
 
 import sys
 if sys.version_info.major not in [2, 3]:

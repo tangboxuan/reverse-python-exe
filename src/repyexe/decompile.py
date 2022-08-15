@@ -1,15 +1,15 @@
 # compatible with both Python 2 and Python 3
 
+import sys
 import pefile 
 import marshal
 import os
 import platform
 import re
-import sys
-from utilities import pyc2py, writepyc
-from magic import magic_word_to_version
-from pyinstxtractor import PyInstArchive
-from clean import clean
+from .magic import magic_word_to_version
+from .utilities import pyc2py, writepyc
+from .pyinstxtractor import PyInstArchive
+from .clean import clean
 
 if not os.path.exists("output"):
     os.mkdir("output")
@@ -117,7 +117,7 @@ def exe2py(filename):
 
 def decompile_exe(filename):
     print('#' * 70)
-    print("Decompiling {}...".format(file))
+    print("Decompiling {}...".format(filename))
     try:
         with open(filename, 'rb') as f:
             magic = f.read(2)
@@ -151,12 +151,3 @@ def decompile_exe(filename):
     except:
         print("[!] Unable to bypass obfuscation for {}".format(filename))
         return False
-
-if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        print("Usage: decompile.py <files>")
-        sys.exit(1)
-
-    files = sys.argv[1:]
-    for file in files:
-        decompile_exe(file)

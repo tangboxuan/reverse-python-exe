@@ -5,3 +5,8 @@ __pycache__
 output*
 input*
 !samples/*
+dist
+src/repyexe.egg-info
+setup.py
+pyproject.toml
+build

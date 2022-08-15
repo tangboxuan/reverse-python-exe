@@ -1,4 +1,5 @@
 # credits: https://github.com/google/pytype/blob/main/pytype/pyc/magic.py
+# by Google
 
 """Python version numbers and their encoding ("magic number")."""
 

@@ -1,4 +1,5 @@
 # modified from https://github.com/extremecoders-re/pyinstxtractor
+# by Extreme Coders
 
 from __future__ import print_function
 import os
@@ -6,7 +7,7 @@ import struct
 import zlib
 import sys
 from uuid import uuid4 as uniquename
-from utilities import pyc2py, writepyc
+from .utilities import pyc2py, writepyc
 
 class CTOCEntry:
     def __init__(self, position, cmprsdDataSize, uncmprsdDataSize, cmprsFlag, typeCmprsData, name):

@@ -1,7 +1,8 @@
 # modified from https://github.com/mandiant/flare-bytecode_graph/blob/master/examples/bytecode_deobf_blog.py
+# by Joshua Homan, Mandiant
 
 import dis
-import bytecode_graph
+from .bytecode_graph import BytecodeGraph
 
 def clean_ROT_TWO(bcg):
     for current in bcg.nodes():
@@ -50,7 +51,7 @@ def clean_NOPS(bcg):
             bcg.delete_node(current)
 
 def clean(code):
-    bcg = bytecode_graph.BytecodeGraph(code)
+    bcg = BytecodeGraph(code)
     clean_ROT_TWO(bcg)
     clean_ROT_THREE(bcg)
     clean_LOAD_POP(bcg)
