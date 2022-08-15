@@ -57,7 +57,7 @@ This script also aims to deobsfuscate Python bytecode containing the following o
 
 ## TO DO
 
-- Deobfuscate Python bytecode containing ``` NOP, ROT_TWO, ROT_THREE, LOAD_CONST & POP_TOP ``` obsfucation in Python 3
+- Support EXTENDED_ARG opcode
 - Also support folders created by the 3 libraries (which would also automate the reverse engineering of files created by CX_Freeze)
 - Publish library
 

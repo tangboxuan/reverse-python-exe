@@ -25,7 +25,9 @@ class Bytecode():
         self.opcode = get_int(buffer[0])
         self.addr = addr
 
-        if self.opcode >= dis.HAVE_ARGUMENT:
+        if sys.version_info >= (3, 6):
+            self.oparg = get_int(buffer[1])
+        elif self.opcode >= dis.HAVE_ARGUMENT:
             self.oparg = get_int(buffer[1]) | (get_int(buffer[2]) << 8)
         else:
             self.oparg = None
@@ -36,12 +38,17 @@ class Bytecode():
         self.target = None
         self.lineno = None
 
+    def __str__(self):
+        return self.disassemble()
+
     def len(self):
         '''
         Returns the length of the bytecode
         1 for no argument
         3 for argument
         '''
+        if sys.version_info >= (3, 6):
+            return 2
         if self.opcode < dis.HAVE_ARGUMENT:
             return 1
         else:
@@ -51,9 +58,14 @@ class Bytecode():
         '''
         Return disassembly of bytecode
         '''
-        rvalue = opname[self.opcode].ljust(20)
+        rvalue = "%04x " % self.addr
+        rvalue += "%s " % self.hex()
+        rvalue += opname[self.opcode].ljust(20)
         if self.opcode >= dis.HAVE_ARGUMENT:
-            rvalue += " %04x" % (self.oparg)
+            if sys.version_info >= (3, 6):
+                rvalue += "%02x" % (self.oparg)
+            else:
+                rvalue += " %04x" % (self.oparg)
         return rvalue
 
     def hex(self):
@@ -61,7 +73,9 @@ class Bytecode():
         Return ASCII hex representation of bytecode
         '''
         rvalue = "%02x" % self.opcode
-        if self.opcode >= dis.HAVE_ARGUMENT:
+        if sys.version_info >= (3, 6):
+            rvalue += "%02x" % self.oparg
+        elif self.opcode >= dis.HAVE_ARGUMENT:
             rvalue += "%02x%02x" % \
                     (self.oparg & 0xff, (self.oparg >> 8) & 0xff)
         return rvalue
@@ -70,7 +84,9 @@ class Bytecode():
         '''
         Return bytecode string
         '''
-        if self.opcode >= dis.HAVE_ARGUMENT:
+        if sys.version_info >= (3, 6):
+            return struct.pack("<BB", self.opcode, self.oparg)
+        elif self.opcode >= dis.HAVE_ARGUMENT:
             return struct.pack("<BH", self.opcode, self.oparg)
         else:
             return struct.pack("<B", self.opcode)
@@ -98,6 +114,9 @@ class BytecodeGraph():
         self.head = None
         self.parse_bytecode()
         self.apply_lineno()
+
+    def __str__(self):
+        return self.disassemble()
 
     def add_node(self, parent, bc, lnotab=None):
         '''
@@ -225,8 +244,7 @@ class BytecodeGraph():
 
         rvalue = ""
         for x in self.nodes(start):
-            rvalue += "[%04d] %04x %-6s %s\n" % \
-                    (x.lineno, x.addr, x.hex(), x.disassemble())
+            rvalue += "[%04d] %s\n" % (x.lineno, x.disassemble())
         return rvalue
 
     def get_code(self, start=None):
@@ -310,7 +328,7 @@ class BytecodeGraph():
                             prev)
 
             self.bytecodes[self.base + offset] = next
-            offset += self.bytecodes[offset].len()
+            offset += next.len()
 
             if prev is not None:
                 prev.next = next
