@@ -4,4 +4,4 @@ __pycache__
 *.txt
 output*
 input*
-!pyc_files/*
+!samples/*

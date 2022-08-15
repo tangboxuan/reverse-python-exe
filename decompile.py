@@ -11,6 +11,14 @@ from magic import magic_word_to_version
 from pyinstxtractor import PyInstArchive
 from clean import clean
 
+if not os.path.exists("output"):
+    os.mkdir("output")
+
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 pythonVersion = platform.python_version()
 
 def get_rsrc(pe, name):
@@ -39,6 +47,7 @@ def check_py2exe_pyversion(pe):
     else:
         if not pythonVersion.startswith('2'):
             print("Python 2 required")
+            print("[!] Please switch your Python version")
             return False
         else:
             print("Exe probably compiled using Python 2")
@@ -49,7 +58,7 @@ def exe2py(filename):
     try:
         pe.DIRECTORY_ENTRY_RESOURCE
     except AttributeError:
-        print("{} is not compiled from Python".format(filename))
+        print("[!] {} is not compiled from Python".format(filename))
         return False
         
     # py2exe
@@ -74,7 +83,7 @@ def exe2py(filename):
             print("Successfully decompiled file at output/{}".format(py2exeCode.co_filename))
             return True
         else:
-            print("Failed to find end of header")
+            print("[!] Failed to find end of header")
             return False
     
     # pyinstaller
@@ -99,14 +108,16 @@ def exe2py(filename):
     # cx_freeze
     if re.search("Unable to change DLL search path", pe.__data__):
         print("{} compiled with cx_freeze.".format(filename))
-        print("Run uncompyle6 on every file ending with _main_.pyc in lib\library.zip")
+        print("[!] Run uncompyle6 on every file ending with _main_.pyc in lib\library.zip")
         return True
 
     # others
-    print("{} is possibly compiled from Python, but not with py2exe, pyinstaller or cx_freeze".format(filename))
+    print("[!] {} is possibly compiled from Python, but not with py2exe, pyinstaller or cx_freeze".format(filename))
     return False
 
-def try_decompile(filename):
+def decompile_exe(filename):
+    print('#' * 70)
+    print("Decompiling {}...".format(file))
     try:
         with open(filename, 'rb') as f:
             magic = f.read(2)
@@ -128,28 +139,24 @@ def try_decompile(filename):
                 return False
 
             except KeyError:
-                print("{} is not a exe or pyc file".format(filename))
+                print("[!] {} is not a exe or pyc file".format(filename))
                 return False
 
     except FileNotFoundError:
-        print("File {} not found".format(filename))
+        print("[!] File {} not found".format(filename))
+        return False
+    except KeyboardInterrupt:
+            print("\n [!] Terminated by user")
+            sys.exit()
+    except:
+        print("[!] Unable to bypass obfuscation for {}".format(filename))
         return False
 
 if __name__ == "__main__":
-    if not os.path.exists("output"):
-        os.mkdir("output")
-    try:
-        FileNotFoundError
-    except NameError:
-        FileNotFoundError = OSError
+    if len(sys.argv) == 1:
+        print("Usage: decompile.py <files>")
+        sys.exit(1)
 
-    files = ["exe_files/py2exe37_3line.exe"]
-    # files = ["exe_files/pyinstaller37.exe"]
-    # files = ["pyc_files/helloworld37.pyc"]
-    # files = os.listdir("input")
-    # files = ['input/' + f for f in files]
+    files = sys.argv[1:]
     for file in files:
-        print('#' * 70)
-        print("Decompiling {}...".format(file))
-        if not try_decompile(file):
-            print("Failed to decompile {}".format(file))
+        decompile_exe(file)

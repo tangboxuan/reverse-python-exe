@@ -111,6 +111,7 @@ class PyInstArchive:
         self.pymaj, self.pymin = (pyver//100, pyver%100) if pyver >= 100 else (pyver//10, pyver%10)
         if sys.version_info[0] != self.pymaj or sys.version_info[1] != self.pymin:
             print("Python {0}.{1} required".format(self.pymaj, self.pymin))
+            print("[!] Please switch your Python version")
             return -1
         print("Exe compiled using Python {}.{}".format(self.pymaj, self.pymin))
 
