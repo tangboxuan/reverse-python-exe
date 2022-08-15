@@ -27,6 +27,7 @@ class Bytecode():
 
         if sys.version_info >= (3, 6):
             self.oparg = get_int(buffer[1])
+            self.actualarg = self.oparg
         elif self.opcode >= dis.HAVE_ARGUMENT:
             self.oparg = get_int(buffer[1]) | (get_int(buffer[2]) << 8)
         else:
@@ -40,6 +41,9 @@ class Bytecode():
 
     def __str__(self):
         return self.disassemble()
+
+    def is_extendedarg(self):
+        return self.opcode == 144
 
     def len(self):
         '''
@@ -63,7 +67,10 @@ class Bytecode():
         rvalue += opname[self.opcode].ljust(20)
         if self.opcode >= dis.HAVE_ARGUMENT:
             if sys.version_info >= (3, 6):
-                rvalue += "%02x" % (self.oparg)
+                if self.oparg == self.actualarg:
+                    rvalue += "%02x" % (self.actualarg)
+                else:
+                    rvalue += "(%x)" % (self.actualarg)
             else:
                 rvalue += " %04x" % (self.oparg)
         return rvalue
@@ -98,9 +105,9 @@ class Bytecode():
         '''
         rvalue = None
         if self.opcode in dis.hasjrel:
-            rvalue = self.addr + self.oparg + self.len()
+            rvalue = self.addr + self.len() + self.actualarg
         if self.opcode in dis.hasjabs:
-            rvalue = self.oparg
+            rvalue = self.actualarg
 
         return rvalue
 
@@ -147,10 +154,11 @@ class BytecodeGraph():
         for current in self.nodes(start):
             label = -1
             if current.opcode >= dis.HAVE_ARGUMENT:
+                ##### TODO: Refactor to use get_target_addr() #####
                 if current.opcode in dis.hasjrel:
-                    label = current.addr+current.oparg+current.len()
+                    label = current.addr+current.len()+current.actualarg
                 elif current.opcode in dis.hasjabs:
-                    label = current.oparg
+                    label = current.actualarg
 
                 if label >= 0:
                     if current not in self.bytecodes[label].xrefs:
@@ -218,6 +226,8 @@ class BytecodeGraph():
         Deletes a node from the graph, removing the instruction from the
         produced bytecode stream
         '''
+        if node.prev is not None and node.prev.is_extendedarg():
+            self.delete_node(node.prev)
 
         # For each instruction pointing to instruction to be delete,
         # move the pointer to the next instruction
@@ -319,13 +329,21 @@ class BytecodeGraph():
         self.bytecodes = {}
         prev = None
         offset = 0
+        extended_arg = 0
 
         targets = []
 
         while offset < len(self.code.co_code):
+            extended_arg *= 256
             next = Bytecode(self.base + offset,
                             self.code.co_code[offset:offset+3],
                             prev)
+
+            if next.is_extendedarg():
+                extended_arg += next.oparg
+            else:
+                next.actualarg += extended_arg
+                extended_arg = 0
 
             self.bytecodes[self.base + offset] = next
             offset += next.len()
@@ -350,7 +368,11 @@ class BytecodeGraph():
         '''
         Updates branch instructions to correct offsets after adding or
         deleting bytecode
+
+        Returns whether EXTENDED_ARG instructions were inserted or deleted
         '''
+        modified = False
+
         for current in self.nodes(start):
             # No argument, skip to next
             if current.opcode < dis.HAVE_ARGUMENT:
@@ -358,28 +380,55 @@ class BytecodeGraph():
 
             # Patch relative offsets
             if current.opcode in dis.hasjrel:
-                current.oparg = current.target.addr - \
+                current.actualarg = current.target.addr - \
                                     (current.addr+current.len())
+                modified = self.clean_jump(current) or modified
 
             # Patch absolute offsets
             elif current.opcode in dis.hasjabs:
-                current.oparg = current.target.addr
+                current.actualarg = current.target.addr
+                modified = self.clean_jump(current) or modified
+        
+        return modified
+
+    def clean_jump(self, jump):
+        jump.oparg = jump.actualarg % 256
+        return self.clean_extendedarg(jump, jump.actualarg // 256)
+
+    def clean_extendedarg(self, current, remainder):
+        assert(remainder >= 0)
+        if remainder == 0:
+            if current.prev is not None and current.prev.is_extendedarg():
+                self.delete_node(current.prev)
+                return True
+            else:
+                return False
+        else: # remainder > 0
+            if current.prev is not None and current.prev.is_extendedarg():
+                current.prev.oparg = remainder % 256
+                current.prev.actualarg = current.prev.oparg
+                return self.clean_extendedarg(current.prev, remainder // 256)
+            else: # add a extended arg node
+                raise NotImplementedError("Adding EXTENDED_ARG nodes not implemented")
+                return True
 
     def refactor(self):
         '''
         iterates through all bytecodes and determines correct offset
         position in code sequence after adding or removing bytecode
         '''
+        
+        modified = True
+        while modified:
+            offset = self.base
+            new_bytecodes = {}
 
-        offset = self.base
-        new_bytecodes = {}
+            for current in self.nodes():
+                new_bytecodes[offset] = current
+                current.addr = offset
+                offset += current.len()
+                current = current.next
 
-        for current in self.nodes():
-            new_bytecodes[offset] = current
-            current.addr = offset
-            offset += current.len()
-            current = current.next
-
-        self.bytecodes = new_bytecodes
-        self.patch_opargs()
+            self.bytecodes = new_bytecodes
+            modified = self.patch_opargs()
         self.apply_labels()
