@@ -2,11 +2,10 @@
 __pycache__
 *.pyc
 *.txt
-output*
-input*
-!samples/*
+output
+input
 dist
-src/repyexe.egg-info
-setup.py
-pyproject.toml
 build
+!samples/*
+pyproject.toml
+*.egg-info
