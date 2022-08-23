@@ -107,13 +107,14 @@ class PyInstArchive:
 
         except:
             print('[!] Error : The file is not a pyinstaller archive')
-            return 0
+            return 0, None
 
         self.pymaj, self.pymin = (pyver//100, pyver%100) if pyver >= 100 else (pyver//10, pyver%10)
         if sys.version_info[0] != self.pymaj or sys.version_info[1] != self.pymin:
-            print("Python {0}.{1} required".format(self.pymaj, self.pymin))
+            message = "Python {0}.{1} required".format(self.pymaj, self.pymin)
+            print(message)
             print("[!] Please switch your Python version")
-            return -1
+            return -1, message
         print("Exe compiled using Python {}.{}".format(self.pymaj, self.pymin))
 
         # Additional data after the cookie
@@ -125,7 +126,7 @@ class PyInstArchive:
         self.tableOfContentsPos = self.overlayPos + toc
         self.tableOfContentsSize = tocLen
 
-        return 1
+        return 1, None
 
 
     def parseTOC(self):
@@ -164,6 +165,9 @@ class PyInstArchive:
 
     def extractFiles(self):
 
+        written = []
+        failure = []
+
         for entry in self.tocList:
             self.fPtr.seek(entry.position, os.SEEK_SET)
             data = self.fPtr.read(entry.cmprsdDataSize)
@@ -180,9 +184,25 @@ class PyInstArchive:
                 pycfilename = "{}.pyc".format(entry.name)
                 try:
                     writepyc(pycfilename, data)
-                    pyc2py(pycfilename, "{}.py".format(entry.name))
+                    pyfilename = "{}.py".format(entry.name)
+                    pyc2py(pycfilename, pyfilename)
+                    print("Successfully decompiled file at output/{}".format(pyfilename))
+                    written.append(pyfilename)
+                except Exception as e:
+                    print(e)
+                    print("Unable to decompile {}".format(pycfilename))
+                    failure.append(pycfilename)
                 finally:
                     os.remove(pycfilename)
-                print("Successfully decompiled file at output/{}.py".format(entry.name))
         
-        print("Successfully decompiled all files")
+        totalsuccess = len(failure) == 0
+        if written:
+            if totalsuccess:
+                print("Successfully decompiled all files")
+            else:
+                print("Successfully decompiled some files, follwing files not decompile:")
+                print("\n".join(failure))
+        message = " + ".join(written)
+        if not totalsuccess:
+            message = "\n[!] Partial success: {} \n[!] Failure: {}".format(message, " + ".join(failure))
+        return totalsuccess, message

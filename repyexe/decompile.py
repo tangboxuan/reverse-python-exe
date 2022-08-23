@@ -38,20 +38,22 @@ def check_py2exe_pyversion(pe):
     if len(set(peVersion)) == 1:
         exeVersion = '.'.join(c for c in str(peVersion[0]) if c.isdigit())
         if not pythonVersion.startswith(exeVersion):
-            print("Python " + exeVersion + " required")
+            message = "Python {} required".format(exeVersion)
+            print(message)
             print("[!] Please switch your Python version")
-            return False
+            return False, message
         else:
             print("Exe compiled using Python {}".format(exeVersion))
-            return True
+            return True, None
     else:
         if not pythonVersion.startswith('2'):
-            print("Python 2 required")
+            message = "Python 2 required"
+            print(message)
             print("[!] Please switch your Python version")
-            return False
+            return False, message
         else:
             print("Exe probably compiled using Python 2")
-            return True
+            return True, None
 
 def exe2py(filename):
     pe = pefile.PE(filename)
@@ -59,15 +61,16 @@ def exe2py(filename):
         pe.DIRECTORY_ENTRY_RESOURCE
     except AttributeError:
         print("[!] {} is not compiled from Python".format(filename))
-        return False
+        return False, "Exe file not compiled from Python"
         
     # py2exe
     # adapted from https://www.mandiant.com/resources/deobfuscating-python
     rsrc = get_rsrc(pe, "PYTHONSCRIPT")
     if rsrc != None and rsrc[:4] == b"\x12\x34\x56\x78":
         print("{} compiled with py2exe".format(filename))
-        if not check_py2exe_pyversion(pe):
-            return False
+        correctVersion, message = check_py2exe_pyversion(pe)
+        if not correctVersion:
+            return False, message
         offset = rsrc[0x010:].find(b"\x00") 
         if offset >= 0:
             data = rsrc[0x10 + offset + 1:]
@@ -81,43 +84,41 @@ def exe2py(filename):
             finally:
                 os.remove(pycfilename)
             print("Successfully decompiled file at output/{}".format(py2exeCode.co_filename))
-            return True
+            return True, py2exeCode.co_filename
         else:
             print("[!] Failed to find end of header")
-            return False
+            return False, "Failed to find end of py2exe header"
     
     # pyinstaller
     arch = PyInstArchive(filename)
     if arch.open():
         if arch.checkFile():
             print("{} compiled with pyinstaller".format(filename))
-            pyinstallerCheck = arch.getCArchiveInfo()
+            pyinstallerCheck, message = arch.getCArchiveInfo()
             if pyinstallerCheck == 1:
                 arch.parseTOC()
-                arch.extractFiles()
+                totalsuccess, files = arch.extractFiles()
                 arch.close()
-                return True
+                return totalsuccess, files
             elif pyinstallerCheck == -1:
                 # Wrong python version
-                return False
+                return False, message
             else:
                 # Not a pyinstaller file
                 pass
         arch.close()
 
     # cx_freeze
-    if re.search("Unable to change DLL search path", pe.__data__):
+    if re.search(b"Unable to change DLL search path", pe.__data__):
         print("{} compiled with cx_freeze.".format(filename))
         print("[!] Run uncompyle6 on every file ending with _main_.pyc in lib\library.zip")
-        return True
+        return True, "[!] Manual decompilation required"
 
     # others
     print("[!] {} is possibly compiled from Python, but not with py2exe, pyinstaller or cx_freeze".format(filename))
-    return False
+    return False, "Unknown Python library used"
 
 def decompile_exe(filename):
-    print('#' * 70)
-    print("Decompiling {}...".format(filename))
     try:
         with open(filename, 'rb') as f:
             magic = f.read(2)
@@ -133,21 +134,23 @@ def decompile_exe(filename):
                 if pycVersion == sys.version_info[0:2]:
                     pyc2py(filename, "decompiled.py")
                     print("Successfully decompiled file at output/decompiled.py")
-                    return True
-                print("Python {}.{} required".format(pycVersion[0], pycVersion[1]))
+                    return True, "decompiled.py"
+                versionRequied = "Python {}.{} required".format(pycVersion[0], pycVersion[1])
+                print(versionRequied)
                 print("[!] Please switch your Python version")
-                return False
+                return False, versionRequied
 
             except KeyError:
                 print("[!] {} is not a exe or pyc file".format(filename))
-                return False
+                return False, "Not exe or pyc file"
 
     except FileNotFoundError:
         print("[!] File {} not found".format(filename))
-        return False
+        return False, "File not found"
     except KeyboardInterrupt:
             print("\n [!] Terminated by user")
             sys.exit()
-    except:
+    except Exception as e:
+        print(e)
         print("[!] Unable to bypass obfuscation for {}".format(filename))
-        return False
+        return False, "Unable to bypass obfuscation"

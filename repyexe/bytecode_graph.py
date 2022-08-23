@@ -7,7 +7,6 @@ if sys.version_info.major not in [2, 3]:
 
 import dis
 import struct
-
 from dis import opname
 from types import CodeType
 
