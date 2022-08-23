@@ -1,14 +1,30 @@
-import sys
+import argparse
 import os
 from .decompile import decompile_exe
+from .utilities import options
+
+parser = argparse.ArgumentParser(
+    prog="repyexe",
+    description="Reverse Engineer Windows executable file compiled using Python"
+)
+parser.add_argument(
+    "files", 
+    nargs="+", 
+    help="one of more folders or files to decompile"
+)
+parser.add_argument(
+    "-d", "--debug",
+    action="store_true",
+    help="prints (deobfuscated) bytecode to stdout"
+)
 
 def main():
-    if len(sys.argv) == 1:
-        print("Usage: repyexe <files and dirs>")
-        sys.exit(1)
+    args = parser.parse_args()
+    inputs = args.files
+    options["debug"] = args.debug
 
-    inputs = sys.argv[1:]
     files = []
+    bad = []
     while inputs:
         current = inputs.pop()
         if os.path.isdir(current):
@@ -16,10 +32,10 @@ def main():
         elif os.path.isfile(current):
             files.append(current)
         else:
-            print("[!] File {} not found".format(current))
+            print("[!] File or folder {} not found".format(current))
+            bad.append("{} ---> Not found".format(current))
 
     good = []
-    bad = []
     count = 1
     for file in files:
         print('#' * 70)

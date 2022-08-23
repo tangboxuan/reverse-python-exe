@@ -1,5 +1,8 @@
 import sys
-from uncompyle6.main import decompile_file
+from uncompyle6.main import decompile, decompile_file
+
+options = {}
+options["debug"] = False
 
 # imp is deprecated in Python3 in favour of importlib
 if sys.version_info.major == 3:
@@ -19,10 +22,17 @@ def generatePycHeader():
             header += b'\0' * 4
     return header
 
+headerlength = len(generatePycHeader())
+
+def co2py(co, output):
+    with open("output/"+output, "w") as fo:
+        decompile(None, co, fo)
+
 def pyc2py(filename, output):
     with open("output/"+output, "w") as fo:
         decompile_file(filename, outstream=fo)
 
+# not currently used
 def writepyc(filename, data):
     with open(filename, "wb") as pyc:
         pyc.write(generatePycHeader())

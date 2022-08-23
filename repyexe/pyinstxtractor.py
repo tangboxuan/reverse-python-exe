@@ -2,12 +2,14 @@
 # by Extreme Coders
 
 from __future__ import print_function
+import marshal
 import os
 import struct
 import zlib
 import sys
+import dis
 from uuid import uuid4 as uniquename
-from .utilities import pyc2py, writepyc
+from .utilities import co2py, options
 
 class CTOCEntry:
     def __init__(self, position, cmprsdDataSize, uncmprsdDataSize, cmprsFlag, typeCmprsData, name):
@@ -181,19 +183,20 @@ class PyInstArchive:
             if entry.typeCmprsData == b's':
                 # s -> ARCHIVE_ITEM_PYSOURCE
                 # Entry point are expected to be python scripts
-                pycfilename = "{}.pyc".format(entry.name)
+                outputname = "{}.py".format(entry.name)
                 try:
-                    writepyc(pycfilename, data)
-                    pyfilename = "{}.py".format(entry.name)
-                    pyc2py(pycfilename, pyfilename)
-                    print("Successfully decompiled file at output/{}".format(pyfilename))
-                    written.append(pyfilename)
+                    co = marshal.loads(data)
+
+                    if options["debug"]:
+                        dis.dis(co)
+
+                    co2py(co, outputname)
+                    print("Successfully decompiled file at output/{}".format(outputname))
+                    written.append(outputname)
                 except Exception as e:
                     print(e)
-                    print("Unable to decompile {}".format(pycfilename))
-                    failure.append(pycfilename)
-                finally:
-                    os.remove(pycfilename)
+                    print("Unable to decompile {}".format(outputname))
+                    failure.append(outputname)
         
         totalsuccess = len(failure) == 0
         if written:

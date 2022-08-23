@@ -6,8 +6,9 @@ import marshal
 import os
 import platform
 import re
+import dis
 from .magic import magic_word_to_version
-from .utilities import pyc2py, writepyc
+from .utilities import co2py, pyc2py, headerlength, options
 from .pyinstxtractor import PyInstArchive
 from .clean import clean
 
@@ -76,13 +77,12 @@ def exe2py(filename):
             data = rsrc[0x10 + offset + 1:]
             py2exeCode = marshal.loads(data)[-1]
             cleanCode = clean(py2exeCode)
+            
+            if options["debug"]:
+                dis.dis(cleanCode)
 
-            pycfilename = py2exeCode.co_filename + 'c'
-            try:
-                writepyc(pycfilename, marshal.dumps(cleanCode))
-                pyc2py(pycfilename, py2exeCode.co_filename)
-            finally:
-                os.remove(pycfilename)
+            co2py(cleanCode, cleanCode.co_filename)
+                
             print("Successfully decompiled file at output/{}".format(py2exeCode.co_filename))
             return True, py2exeCode.co_filename
         else:
@@ -120,6 +120,7 @@ def exe2py(filename):
 
 def decompile_exe(filename):
     try:
+        # any exceptions thrown must be because of libraries used (deobsfuscation failed)
         with open(filename, 'rb') as f:
             magic = f.read(2)
             if magic == b'MZ':
@@ -132,6 +133,12 @@ def decompile_exe(filename):
                 # pyc file
                 print("{} is a pyc file".format(filename))
                 if pycVersion == sys.version_info[0:2]:
+
+                    if options["debug"]:
+                        with open(filename, "rb") as f:
+                            pyccode = marshal.loads(f.read()[headerlength:])
+                            dis.dis(pyccode)
+                            
                     pyc2py(filename, "decompiled.py")
                     print("Successfully decompiled file at output/decompiled.py")
                     return True, "decompiled.py"
@@ -144,7 +151,8 @@ def decompile_exe(filename):
                 print("[!] {} is not a exe or pyc file".format(filename))
                 return False, "Not exe or pyc file"
 
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        print(e)
         print("[!] File {} not found".format(filename))
         return False, "File not found"
     except KeyboardInterrupt:
