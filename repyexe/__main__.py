@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 from .decompile import decompile_exe
 from .utilities import options
 
@@ -13,6 +14,12 @@ parser.add_argument(
     help="one of more folders or files to decompile"
 )
 parser.add_argument(
+    "-o", "--output",
+    metavar="NAME",
+    default="output",
+    help="specify output directory name (default:output)"
+)
+parser.add_argument(
     "-d", "--debug",
     action="store_true",
     help="prints (deobfuscated) bytecode to stdout"
@@ -22,6 +29,10 @@ def main():
     args = parser.parse_args()
     inputs = args.files
     options["debug"] = args.debug
+    if not args.output.isalnum():
+        print("Invalid output directory name (no nested folders allowed)")
+        sys.exit(1)
+    options["output"] = args.output
 
     files = []
     bad = []

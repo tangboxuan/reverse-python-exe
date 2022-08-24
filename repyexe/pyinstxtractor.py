@@ -10,6 +10,7 @@ import sys
 import dis
 from uuid import uuid4 as uniquename
 from .utilities import co2py, options
+from .clean import clean
 
 class CTOCEntry:
     def __init__(self, position, cmprsdDataSize, uncmprsdDataSize, cmprsFlag, typeCmprsData, name):
@@ -186,11 +187,12 @@ class PyInstArchive:
                 outputname = "{}.py".format(entry.name)
                 try:
                     co = marshal.loads(data)
+                    cleanco = clean(co)
 
                     if options["debug"]:
-                        dis.dis(co)
+                        dis.dis(cleanco)
 
-                    co2py(co, outputname)
+                    co2py(cleanco, outputname)
                     print("Successfully decompiled file at output/{}".format(outputname))
                     written.append(outputname)
                 except Exception as e:

@@ -3,17 +3,13 @@
 import sys
 import pefile 
 import marshal
-import os
 import platform
 import re
 import dis
 from .magic import magic_word_to_version
-from .utilities import co2py, pyc2py, headerlength, options
+from .utilities import co2py, headerlength, options
 from .pyinstxtractor import PyInstArchive
 from .clean import clean
-
-if not os.path.exists("output"):
-    os.mkdir("output")
 
 try:
     FileNotFoundError
@@ -134,14 +130,17 @@ def decompile_exe(filename):
                 print("{} is a pyc file".format(filename))
                 if pycVersion == sys.version_info[0:2]:
 
+                    with open(filename, "rb") as f:
+                        pyccode = marshal.loads(f.read()[headerlength:])
+                    cleancode = clean(pyccode)
+
                     if options["debug"]:
-                        with open(filename, "rb") as f:
-                            pyccode = marshal.loads(f.read()[headerlength:])
-                            dis.dis(pyccode)
+                        dis.dis(cleancode)
                             
-                    pyc2py(filename, "decompiled.py")
-                    print("Successfully decompiled file at output/decompiled.py")
-                    return True, "decompiled.py"
+                    co2py(cleancode, cleancode.co_filename)
+                    print("Successfully decompiled file at output{}".format(cleancode.co_filename))
+                    return True, cleancode.co_filename
+
                 versionRequied = "Python {}.{} required".format(pycVersion[0], pycVersion[1])
                 print(versionRequied)
                 print("[!] Please switch your Python version")
