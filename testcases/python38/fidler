@@ -1,0 +1,10 @@
+def main():
+    if password_screen():
+        game_screen()
+    else:
+        password_fail_screen()
+    pg.quit()
+
+
+if __name__ == '__main__':
+    main()

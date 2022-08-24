@@ -53,7 +53,7 @@ def check_py2exe_pyversion(pe):
             print("Exe probably compiled using Python 2")
             return True, None
 
-def exe2py(filename):
+def exe2py(filename, outstream=None):
     pe = pefile.PE(filename)
     try:
         pe.DIRECTORY_ENTRY_RESOURCE
@@ -78,7 +78,7 @@ def exe2py(filename):
             if options["debug"]:
                 dis.dis(cleanCode)
 
-            co2py(cleanCode, cleanCode.co_filename)
+            co2py(cleanCode, outputname=cleanCode.co_filename, outstream=outstream)
                 
             print("Successfully decompiled file at output/{}".format(py2exeCode.co_filename))
             return True, py2exeCode.co_filename
@@ -94,7 +94,7 @@ def exe2py(filename):
             pyinstallerCheck, message = arch.getCArchiveInfo()
             if pyinstallerCheck == 1:
                 arch.parseTOC()
-                totalsuccess, files = arch.extractFiles()
+                totalsuccess, files = arch.extractFiles(outstream=outstream)
                 arch.close()
                 return totalsuccess, files
             elif pyinstallerCheck == -1:
@@ -109,13 +109,15 @@ def exe2py(filename):
     if re.search(b"Unable to change DLL search path", pe.__data__):
         print("{} compiled with cx_freeze.".format(filename))
         print("[!] Run uncompyle6 on every file ending with _main_.pyc in lib\library.zip")
+        if outstream:
+            outstream.write("cx_freeze detected")
         return True, "[!] Manual decompilation required"
 
     # others
     print("[!] {} is possibly compiled from Python, but not with py2exe, pyinstaller or cx_freeze".format(filename))
     return False, "Unknown Python library used"
 
-def decompile_exe(filename):
+def decompile_exe(filename, outstream=None):
     try:
         # any exceptions thrown must be because of libraries used (deobsfuscation failed)
         with open(filename, 'rb') as f:
@@ -123,7 +125,7 @@ def decompile_exe(filename):
             if magic == b'MZ':
                 # exe file
                 print("{} is an exe file".format(filename))
-                return exe2py(filename)
+                return exe2py(filename, outstream=outstream)
 
             try:
                 pycVersion = magic_word_to_version(magic)
@@ -138,8 +140,8 @@ def decompile_exe(filename):
                     if options["debug"]:
                         dis.dis(cleancode)
                             
-                    co2py(cleancode, cleancode.co_filename)
-                    print("Successfully decompiled file at output{}".format(cleancode.co_filename))
+                    co2py(cleancode, outputname=cleancode.co_filename, outstream=outstream)
+                    print("Successfully decompiled file at output/{}".format(cleancode.co_filename))
                     return True, cleancode.co_filename
 
                 versionRequied = "Python {}.{} required".format(pycVersion[0], pycVersion[1])

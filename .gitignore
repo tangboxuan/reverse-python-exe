@@ -6,6 +6,6 @@ output
 input
 dist
 build
-!samples/*
 pyproject.toml
 *.egg-info
+!samples/*/*.pyc

@@ -4,7 +4,6 @@
 import sys
 if sys.version_info.major not in [2, 3]:
     raise NotImplementedError("Only Python 2 and 3 are supported")
-
 import dis
 import struct
 from dis import opname

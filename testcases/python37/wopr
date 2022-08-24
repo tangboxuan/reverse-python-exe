@@ -1,0 +1,5 @@
+for i in range(256):
+    try:
+        print(lzma.decompress(fire(eye(__doc__.encode()), bytes([i]) + BOUNCE)))
+    except Exception:
+        pass

@@ -26,14 +26,17 @@ def generatePycHeader():
 
 headerlength = len(generatePycHeader())
 
-def co2py(co, outputname):
-    if not os.path.exists(options["output"]):
-        os.mkdir(options["output"])
-    with open("{}/{}".format(options["output"], outputname), "w") as fo:
-        decompile(None, co, fo)
+def co2py(co, outputname=None, outstream=None):
+    if not outstream:
+        if not os.path.exists(options["output"]):
+            os.mkdir(options["output"])
+        with open("{}/{}".format(options["output"], outputname), "w") as fo:
+            decompile(None, co, fo)
+    else:
+        decompile(None, co, outstream)
 
 # not currently used
-def writepyc(filename, data):
-    with open(filename, "wb") as pyc:
-        pyc.write(generatePycHeader())
-        pyc.write(data)
+# def writepyc(filename, data):
+#     with open(filename, "wb") as pyc:
+#         pyc.write(generatePycHeader())
+#         pyc.write(data)

@@ -167,7 +167,7 @@ class PyInstArchive:
 
             parsedLen += entrySize
 
-    def extractFiles(self):
+    def extractFiles(self, outstream=None):
 
         written = []
         failure = []
@@ -193,7 +193,7 @@ class PyInstArchive:
                     if options["debug"]:
                         dis.dis(cleanco)
 
-                    co2py(cleanco, outputname)
+                    co2py(cleanco, outputname=outputname, outstream=outstream)
                     print("Successfully decompiled file at output/{}".format(outputname))
                     written.append(outputname)
                 except Exception:
