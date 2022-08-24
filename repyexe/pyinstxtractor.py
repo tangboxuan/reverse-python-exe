@@ -5,6 +5,7 @@ from __future__ import print_function
 import marshal
 import os
 import struct
+import traceback
 import zlib
 import sys
 import dis
@@ -195,8 +196,8 @@ class PyInstArchive:
                     co2py(cleanco, outputname)
                     print("Successfully decompiled file at output/{}".format(outputname))
                     written.append(outputname)
-                except Exception as e:
-                    print(e)
+                except Exception:
+                    traceback.print_exc()
                     print("Unable to decompile {}".format(outputname))
                     failure.append(outputname)
         
@@ -209,5 +210,7 @@ class PyInstArchive:
                 print("\n".join(failure))
         message = " + ".join(written)
         if not totalsuccess:
-            message = "\n[!] Partial success: {} \n[!] Failure: {}".format(message, " + ".join(failure))
+            if message:
+                message = "\n[!] Partial success: {}".format(message)
+            message += "\n[!] Failure: {}".format(" + ".join(failure))
         return totalsuccess, message

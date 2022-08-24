@@ -6,6 +6,7 @@ import marshal
 import platform
 import re
 import dis
+import traceback
 from .magic import magic_word_to_version
 from .utilities import co2py, headerlength, options
 from .pyinstxtractor import PyInstArchive
@@ -153,11 +154,11 @@ def decompile_exe(filename):
     except FileNotFoundError as e:
         print(e)
         print("[!] File {} not found".format(filename))
-        return False, "File not found"
+        return False, "Not found"
     except KeyboardInterrupt:
             print("\n [!] Terminated by user")
             sys.exit()
-    except Exception as e:
-        print(e)
+    except Exception:
+        traceback.print_exc()
         print("[!] Unable to bypass obfuscation for {}".format(filename))
         return False, "Unable to bypass obfuscation"

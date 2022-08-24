@@ -33,6 +33,9 @@ This script can also bypass the following deobsfucation techniques (only enabled
 
 ## Supported Files
 
+Python <= 3.7  
+Limited support for Python 3.8
+
 Tested on files listed in [tested.md](https://github.com/tangboxuan/reverse-python-exe/blob/main/tested.md)
 
 -  Python 2 using Py2exe
