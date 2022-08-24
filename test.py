@@ -1,10 +1,8 @@
 import unittest
-from io import StringIO
+from six import StringIO
 import os
 import sys
 from repyexe.decompile import decompile_exe
-
-sys.stdout = open(os.devnull, 'w')
 
 class Test(unittest.TestCase):
     pass
@@ -24,6 +22,8 @@ def test_generator(filename):
     return test
 
 if __name__ == '__main__':
+    print("Testing Python {}.{}".format(sys.version_info.major, sys.version_info.minor))
+    sys.stdout = open(os.devnull, 'w')
     version = "python{}{}/".format(sys.version_info.major, sys.version_info.minor)
     samplepath = "samples/" + version
     answerpath = "testcases/" + version

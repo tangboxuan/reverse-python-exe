@@ -1,0 +1,16 @@
+if count > 25:
+    print 'Status: took too long %d' % count
+    sys.exit(1)
+else:
+    print 'Status: %d guesses' % count
+if error_input != '':
+    tmp = ('').join(chr(ord(x) ^ 66) for x in error_input).encode('hex')
+    if tmp != '312a232f272e27313162322e372548':
+        sys.exit(0)
+    stuffs = [67, 139, 119, 165, 232, 86, 207, 61, 79, 67, 45, 58, 230, 190, 181, 74, 65, 148, 71, 243, 246, 67, 142, 60, 61, 92, 58, 115, 240, 226, 171]
+    import hashlib
+    stuffer = hashlib.md5(win_msg + tmp).digest()
+    for x in range(len(stuffs)):
+        print chr(stuffs[x] ^ ord(stuffer[(x % len(stuffer))])),
+
+    print

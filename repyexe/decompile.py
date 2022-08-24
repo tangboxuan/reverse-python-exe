@@ -140,9 +140,10 @@ def decompile_exe(filename, outstream=None):
                     if options["debug"]:
                         dis.dis(cleancode)
                             
-                    co2py(cleancode, outputname=cleancode.co_filename, outstream=outstream)
-                    print("Successfully decompiled file at output/{}".format(cleancode.co_filename))
-                    return True, cleancode.co_filename
+                    filename = cleancode.co_filename.split('/')[-1]
+                    co2py(cleancode, outputname=filename, outstream=outstream)
+                    print("Successfully decompiled file at output/{}".format(filename))
+                    return True, filename
 
                 versionRequied = "Python {}.{} required".format(pycVersion[0], pycVersion[1])
                 print(versionRequied)
